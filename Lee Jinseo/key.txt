@@ -1,0 +1,200 @@
+#include <stdio.h>
+#include <Windows.h>
+#include <conio.h>
+#include <time.h>
+#include <stdlib.h>
+
+int PlayGame = true;
+int Seconds = 0;
+
+void GoCursor(int x, int y);
+void Pri(int sel);
+void CursorInvisible(int i);
+void PrintTime();
+
+class Map {
+	int map[3][3] = { 0 };
+	int copymap[3][3] = { 0 };
+	int offSetX = 10;
+	int offSetY = 5;
+	int selStack = 0;
+	int score = 0;
+	int SpawnTime = 500;
+
+public:
+	int GetSpawnTime() {
+		return SpawnTime;
+	}
+	int GetScore() {
+		return score;
+	}
+	int GetSelStack() {
+		return selStack;
+	}
+
+	void printMap() {
+		for (int y = 0; y < 3; y++) {
+			for (int x = 0; x < 3; x++) {
+				GoCursor(offSetX + (x * 2), offSetY + y);
+				Pri(map[y][x]);
+			}
+		}
+	}
+
+	void RenderMap() {
+		for (int y = 0; y < 3; y++) {
+			for (int x = 0; x < 3; x++) {
+				if (map[y][x] != copymap[y][x]) {
+					GoCursor(offSetX + (x * 2), offSetY + y);
+					Pri(map[y][x]);
+					copymap[y][x] = map[y][x];
+				}
+			}
+		}
+	}
+
+	void RandomSel() {
+		int test;
+		do {
+			test = rand() % 9;
+			map[test / 3][test % 3] = 1;
+			if (copymap[test / 3][test % 3] != 1)
+				selStack += 1;
+		} while (copymap[test / 3][test % 3] == 1 && selStack < 9);
+	}
+
+	void ClearSel(int number) {
+		int DelKeyNumber = -1;
+		switch (number)
+		{
+		case 55:
+			DelKeyNumber = 0;
+			break;
+		case 56:
+			DelKeyNumber = 1;
+			break;
+		case 57:
+			DelKeyNumber = 2;
+			break;
+		case 52:
+			DelKeyNumber = 3;
+			break;
+		case 53:
+			DelKeyNumber = 4;
+			break;
+		case 54:
+			DelKeyNumber = 5;
+			break;
+		case 49:
+			DelKeyNumber = 6;
+			break;
+		case 50:
+			DelKeyNumber = 7;
+			break;
+		case 51:
+			DelKeyNumber = 8;
+			break;
+		default:
+			break;
+		}
+		if(DelKeyNumber >= 0 && DelKeyNumber < 9)
+		if (map[DelKeyNumber / 3][DelKeyNumber % 3] == 1) {
+			selStack -= 1;
+			score += 1;
+			map[DelKeyNumber / 3][DelKeyNumber % 3] = 0;
+			PrintScore();
+		}
+	}
+
+	void PrintScore() {
+		GoCursor(30, 0);
+		printf("점수 : %d점        ", score);
+	}
+};
+
+void Update(int& SummonSelTime, int& CountTime, int& CurTime, Map& map);
+
+int main() {
+	srand((unsigned int)time(NULL));
+	Map map;
+	int SummonSelTime = 0;
+	int CountTime = 0;
+	int CurTime = 0;
+	map.printMap();
+	map.PrintScore();
+	PrintTime();
+	CursorInvisible(0);
+
+	while (PlayGame) {
+		Update(SummonSelTime, CountTime, CurTime, map);
+		map.RenderMap();
+	}
+	return 0;
+}
+
+void PrintTime() {
+	int sec = 0, min = 0;
+	sec = Seconds % 60;
+	min = Seconds / 60;
+	GoCursor(0, 0);
+	printf("시간 %d:%d       ", min, sec);
+}
+
+void Pri(int sel) {
+	switch (sel) {
+	case 0:
+		printf("□");
+		break;
+	case 1:
+		printf("■");
+		break;
+	default:
+		break;
+	}
+}
+
+
+
+void Update(int& SummonSelTime, int& CountTime, int& CurTime, Map& map) {
+	if (map.GetSelStack() == 9) {
+		PlayGame = false;
+	}
+
+	CurTime = clock();
+
+	if (CurTime - CountTime >= 1000) {
+		Seconds += 1;
+		CountTime = CurTime;
+		PrintTime();
+	}
+
+	if (CurTime - SummonSelTime >= map.GetSpawnTime() - map.GetScore()) {
+		map.RandomSel();
+		SummonSelTime = CurTime;
+	}
+
+	if (_kbhit()) {
+		int key = _getch();
+		map.ClearSel(key);
+	}
+}
+
+
+
+void GoCursor(int x, int y) {
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), { (short)x, (short)y });
+}
+
+
+
+void CursorInvisible(int i)
+{
+	HANDLE hConsole;
+	CONSOLE_CURSOR_INFO ConsoleCursor;
+	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	ConsoleCursor.bVisible = i;
+	ConsoleCursor.dwSize = 1;
+
+	SetConsoleCursorInfo(hConsole, &ConsoleCursor);
+}
