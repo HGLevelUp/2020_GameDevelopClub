@@ -1,0 +1,267 @@
+#include<stdio.h>
+#include<conio.h>
+#include<time.h>
+#include<Windows.h>
+#define X 40
+#define Y 20
+#define BULLET_MAX 20
+#define E_BULLET_MAX 20
+
+typedef struct OBJECT {
+	int x, y, v;
+	int health;
+}OBJECT;
+typedef struct _EFFECT {
+	clock_t StartTime;		//효과 발생 시각
+	clock_t StayTime;		//효과 지속 시간
+}EFFECT;
+typedef struct BULLET {
+	OBJECT pos;
+	bool shooting;
+	time_t BS_Oldtime;
+}BULLET;
+
+int map[Y][X] = { 0, };
+int B_delay;
+int E_B_delay;
+
+OBJECT player;
+BULLET bullet[BULLET_MAX];
+BULLET E_bullet[E_BULLET_MAX];
+OBJECT enemy[10];
+OBJECT entity;
+
+
+time_t Curtime;
+time_t Oldtime;
+time_t B_Oldtime;
+/// //////프레임워크함수///////////
+void Init();
+void Update();
+void Render();
+void Release();
+/// ////////커스텀함수/////////////
+void gotoXY(int x, int y);
+void GetKey();
+void Shooting();
+/////////////////////////
+int main() {
+	Init();
+	while (1) {
+		Curtime = clock();
+		if (Curtime - Oldtime >= 88) {
+			Update();
+			Render();
+			Oldtime = Curtime;
+		}
+		if (player.health == 0 || entity.health == 0) {
+			break;
+			system("cls");
+			gotoXY(7, 5);
+			printf_s("Player 1 WIN!!!");
+		}
+	}
+	Release();
+}
+/// /////////////////////
+void Init() {
+	for (int i = 0; i < Y; i++) {
+		map[i][0] = 1;
+		map[i][31] = 1;
+		map[i][X - 1] = 1;
+	}
+	for (int i = 0; i < X; i++) {
+		map[0][i] = 1;
+		map[Y - 1][i] = 1;
+	}
+
+	player.x = 20;
+	player.y = 18;
+	player.health = 3;
+
+	entity.x = 20;
+	entity.y = 1;
+	entity.health = 3;
+
+	B_delay = 300;
+	
+	E_B_delay = 300;
+}
+
+void Update() {
+	GetKey();
+	Shooting();
+}
+
+void Render() {
+	system("cls");
+	for (int i = 0; i < Y; i++)
+		for (int j = 0; j < X; j++) {
+				switch (map[i][j]) {
+					case 0:
+					break;
+					case 1:
+					gotoXY(2 * j, i);
+					printf("■");
+					break;
+				}
+		}
+	gotoXY(64, 15);
+	printf_s("P2");
+	switch (player.health)
+	{
+	case 0:
+		gotoXY(64, 16);
+		printf_s("□□□");
+		break;
+	case 1:
+		gotoXY(64, 16);
+		printf_s("■□□");
+		break;
+	case 2:
+		gotoXY(64, 16);
+		printf_s("■■□");
+		break;
+	case 3:
+		gotoXY(64, 16);
+		printf_s("■■■");
+		break;
+	}
+	gotoXY(64, 3);
+	printf_s("P1");
+	switch (entity.health)
+	{
+	case 0:
+		gotoXY(64, 4);
+		printf_s("□□□");
+		break;
+	case 1:
+		gotoXY(64, 4);
+		printf_s("■□□");
+		break;
+	case 2:
+		gotoXY(64, 4);
+		printf_s("■■□");
+		break;
+	case 3:
+		gotoXY(64, 4);
+		printf_s("■■■");
+		break;
+	}
+		{
+			//p1
+			gotoXY(2 * (player.x - 1),player.y);
+			printf("◁○▷");
+			for (int i = 0; i < BULLET_MAX; i++)
+				if (bullet[i].shooting == true) {
+				gotoXY(2 * (bullet[i].pos.x), bullet[i].pos.y);
+				printf("↑");
+				}
+
+		}
+		{
+			//p2
+			gotoXY(2 * (entity.x - 1), entity.y);
+			printf("◁●▷");
+			for (int i = 0; i < E_BULLET_MAX; i++)
+				if (E_bullet[i].shooting == true) {
+					gotoXY(2 * (E_bullet[i].pos.x), E_bullet[i].pos.y);
+					printf("↓");
+				}
+		}
+}
+
+void Release() {
+	if (player.health == 0) {
+		system("cls");
+		gotoXY(7, 5);
+		printf_s("Player 1 WIN!!!");
+	}
+	else if (entity.health == 0) {
+		system("cls");
+		gotoXY(7, 5);
+		printf_s("Player 2 WIN!!!");
+	}
+}
+
+void gotoXY(int x, int y) {
+	COORD cd = { x,y };
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), cd);
+}
+
+void GetKey() {
+	if (_kbhit()) {
+		char nKey = _getch();
+		switch (nKey) {
+			//p1
+		case 'a':if (player.x >= 2)player.x--;
+			break;
+		case 'd':if (player.x <= (X - 10) - 1)player.x++;
+			break;
+			//p2
+		case '4':if (entity.x >= 2)entity.x--;
+			break;
+		case '6':if (entity.x <= (X - 10) - 1)entity.x++;
+			break;
+		case  ' ':
+			if (Curtime - B_Oldtime >= B_delay) {
+				for (int i = 0; i < BULLET_MAX; i++) {
+					if (bullet[i].shooting == false) {
+						bullet[i].shooting = true;
+						bullet[i].pos.x = player.x;
+						bullet[i].pos.y = player.y - 1;
+						break;
+					}
+				}
+				B_Oldtime = Curtime;
+			}
+			break;
+		case  '0':
+			if (Curtime - B_Oldtime >= E_B_delay) {
+				for (int i = 0; i < E_BULLET_MAX; i++) {
+					if (E_bullet[i].shooting == false) {
+						E_bullet[i].shooting = true;
+						E_bullet[i].pos.x = entity.x;
+						E_bullet[i].pos.y = entity.y + 1;
+						break;
+					}
+				}
+				B_Oldtime = Curtime;
+			}
+			break;
+		}
+	}
+}
+
+void Shooting() {
+	{
+		//p1
+		for (int i = 0; i < BULLET_MAX; i++) {
+			if (bullet[i].shooting == true) { //발사중
+				if (Curtime - bullet[i].BS_Oldtime >= 100) {
+					bullet[i].pos.y--;
+					if (bullet[i].pos.x == entity.x && bullet[i].pos.y == entity.y && entity.health != 0)
+						entity.health --;
+					if (bullet[i].pos.y <= 0)
+						bullet[i].shooting = false;
+					bullet[i].BS_Oldtime = Curtime;
+				}
+	 		}
+		}
+	}
+	{
+		//p2
+		for (int i = 0; i < E_BULLET_MAX; i++) {
+			if (E_bullet[i].shooting == true) { //발사중
+				if (Curtime - E_bullet[i].BS_Oldtime >= 100) {
+					E_bullet[i].pos.y++;
+					if (E_bullet[i].pos.x == player.x && E_bullet[i].pos.y == player.y && player.health != 0)
+						player.health--;
+					if (E_bullet[i].pos.y >= 19)
+						E_bullet[i].shooting = false;
+					E_bullet[i].BS_Oldtime = Curtime;
+				}
+			}
+		}
+	}
+}
