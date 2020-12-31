@@ -50,16 +50,24 @@ int main() {
 }
 
 void gotoxy(int x, int y){
+	//매개 변수에서 지정한 x,y 좌표로 커서 이동
 	COORD pos = { x,y };
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 }
 
 void cursor(int n){
+	// 콘솔의 핸들
 	HANDLE hConsole;
+	//콘솔 커서 정보 구조체
 	CONSOLE_CURSOR_INFO ConsoleCursor;
+	//hConsole에 밑에 값을 구해 넣어준다
 	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	//n이 1이면 안보이고 0이면 보이게 만든다.
 	ConsoleCursor.bVisible = n;
+	//커서 사이즈
 	ConsoleCursor.dwSize = 1;
+
+	//콘솔(콘솔 핸들과 구조체) 설정
 	SetConsoleCursorInfo(hConsole, &ConsoleCursor);
 }
 
